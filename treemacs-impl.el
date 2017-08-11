@@ -117,6 +117,7 @@ inside BUTTON's buffer."
 Required for button interactions (like `button-get') that do not work when
 called from another buffer than the one the button resides in and
 `treemacs--safe-button-get' is not enough."
+  (declare (indent 1))
   `(with-current-buffer (marker-buffer ,btn)
     ,@body))
 
@@ -128,14 +129,14 @@ called from another buffer than the one the button resides in and
     (format ,msg ,@args)))
 
 (cl-defmacro treemacs--execute-button-action
-    (&key save-window split-function window dir-action file-action tag-action no-match-explanation)
+    (&key save-window split-function window dir-action file-action tag-action tag-node-action no-match-explanation)
   "Infrastructure macro for setting up actions on different button states.
 Fetches the currently selected button and verifies it's in the correct state
 based on the given state actions.
 If it isn't it will log NO-MATCH-EXPLANATION, if it is it selects WINDOW (or
 `next-window' if none is given) and splits it with SPLIT-FUNCTION if given.
-DIR-ACTION, FILE-ACTION, and TAG-ACTION are inserted into a `pcase' statement
-matching the buttons state."
+DIR-ACTION, FILE-ACTION, TAG-NODE-ACTION and TAG-ACTION are inserted into a
+`pcase' statement matching the buttons state."
   (let ((valid-states (list)))
     (when dir-action
       (push 'dir-node-open valid-states)
@@ -145,6 +146,9 @@ matching the buttons state."
       (push 'file-node-closed valid-states))
     (when tag-action
       (push 'tag-node valid-states))
+    (when tag-node-action
+      (push 'tag-node-open valid-states)
+      (push 'tag-node-closed valid-states))
     `(treemacs--without-following
       (let* ((btn (treemacs--current-button))
              (state (button-get btn 'state))
@@ -166,6 +170,9 @@ matching the buttons state."
               ,@(when tag-action
                   `(('tag-node
                      ,tag-action)))
+              ,@(when tag-node-action
+                  `(((or 'tag-node-open 'tag-node-closed)
+                     ,tag-node-action)))
               (_ (error "No match achieved even though button's state %s was part of the set of valid states %s"
                         state ',valid-states)))
             (when ,save-window
@@ -196,6 +203,11 @@ matching the buttons state."
   "Return the text label of BTN."
   (interactive)
   (buffer-substring-no-properties (button-start btn) (button-end btn)))
+
+(defsubst treemacs--get-propertized-label-of (btn)
+  "Return the text label of BTN, including its text properties.."
+  (interactive)
+  (buffer-substring (button-start btn) (button-end btn)))
 
 (defsubst treemacs--refresh-on-ui-change ()
   "Refresh the treemacs buffer when the window system has changed."

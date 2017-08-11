@@ -102,7 +102,7 @@ As of now this only decides which (if any) section name the top level leaves
 should be placed under."
   (declare (pure t) (side-effect-free t))
   (pcase index-mode
-    ('org-mode
+    ((or 'markdown-mode 'org-mode)
      index)
     ((guard (treemacs--provided-mode-derived-p index-mode 'conf-mode))
      (treemacs--partition-imenu-index index "Sections"))
@@ -291,6 +291,37 @@ exist."
        (treemacs--log "Something went wrong when finding tag '%s': %s"
                       (propertize tag 'face 'treemacs-tags-face)
                       e)))))
+
+(defsubst treemacs--goto-tag-with-dead-buffer (btn)
+  "."
+  (pcase treemacs-goto-tag-strategy
+    ('refetch-index
+     (let (file tag-path)
+       (treemacs--with-button-buffer btn
+         (setq file (treemacs--nearest-path btn)
+               tag-path (treemacs--tags-path-of btn)))
+       (treemacs--call-imenu-and-goto-tag file tag-path)))
+    ('call-xref
+     (xref-find-definitions
+      (treemacs--with-button-buffer btn
+        (treemacs--get-label-of btn))))
+    ('issue-warning
+     (treemacs--log "Tag '%s' is located in a buffer that does not exist."
+                    (propertize (treemacs--with-button-buffer btn (treemacs--get-label-of btn)) 'face 'treemacs-tags-face)))
+    (_ (error "[Treemacs] '%s' is an invalid value for treemacs-goto-tag-strategy" treemacs-goto-tag-strategy))))
+
+(defun treemacs--maybe-goto-tag-at-section (btn)
+  "Goto the tag at section BTN.
+
+For the most part tag section buttons are used only for grouping tags and do not
+constitute tags on their own (e.g. \"Functions\" or \"Types\"). One known
+exception is org-mode, where each section is also a headline, so goto-tag must
+work there as well."
+  (let (label imenu-marker)
+    (treemacs--with-button-buffer btn
+      (setq label (treemacs--get-propertized-label-of btn))
+      (setq imenu-marker (get-text-property 0 'org-imenu-marker label))
+      (treemacs--goto-tag-with-dead-buffer btn))))
 
 (defun treemacs--goto-tag (btn)
   "Go to the tag at BTN."

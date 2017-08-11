@@ -152,6 +152,7 @@ Stay in current window with a prefix argument ARG."
    :file-action (find-file (treemacs--safe-button-get btn 'abs-path))
    :dir-action (dired (treemacs--safe-button-get btn 'abs-path))
    :tag-action (treemacs--goto-tag btn)
+   :tag-node-action (treemacs--maybe-goto-tag-at-section btn)
    :save-window arg
    :no-match-explanation "Node is neither a file, a directory or a tag - nothing to do here."))
 

@@ -681,7 +681,11 @@ Callers must make sure to save match data"
         (treemacs--set-width treemacs-width))
       ;; Prevent treemacs from being used as other-window
       (when treemacs-is-never-other-window
-        (set-window-parameter w 'no-other-window t)))))
+        (set-window-parameter w 'no-other-window t))
+      (when treemacs-is-persistent-side-window
+        (if (version< emacs-version "26")
+            (set-window-parameter w 'window-side 'left)
+          (set-window-parameter w 'no-delete-other-windows t))))))
 
 (defun treemacs--set-width (width)
   "Set the width of the treemacs buffer to WIDTH when it is created."

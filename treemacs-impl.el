@@ -515,7 +515,6 @@ Optionally make the git request RECURSIVE."
   (treemacs--cancel-missed-refresh)
   (treemacs--clear-tags-cache)
   (treemacs--tear-down-icon-highlight)
-  (remove-hook 'window-configuration-change-hook #'treemacs--on-window-config-change)
   (setq treemacs--open-dirs-cache nil
         treemacs--ready nil))
 
